@@ -90,10 +90,15 @@ def grade_sheet(image_path, answer_key=None, output_path="graded_sheet_output.pn
         num_columns_override=num_columns_override,
     )
     print(f"[4/5] Grid discovery:")
+    print(f"      - Method: {grid_config['discovery_method']}")
     print(f"      - Detected answer rows: {grid_config['num_rows']}")
     print(f"      - Inferred columns: {grid_config['num_cols']}")
+    for c_i, (c_x1, c_x2) in enumerate(grid_config['col_ranges']):
+        print(f"        * Column {c_i+1}: x in [{int(c_x1*1600)}, {int(c_x2*1600)}] (width={int((c_x2-c_x1)*1600)}px)")
     print(f"      - Total questions: {grid_config['total_questions']}")
     print(f"      - Bubble radius: {grid_config['bubble_radius']} px")
+    if save_debug and grid_config.get('projection_vis') is not None:
+        cv2.imwrite(os.path.join(debug_dir, "4_column_discovery.jpg"), grid_config['projection_vis'])
 
     # Step 4: Bubble sampling & answer extraction
     results, summary = evaluate_bubbles(
@@ -118,15 +123,14 @@ def grade_sheet(image_path, answer_key=None, output_path="graded_sheet_output.pn
             corr = answer_key[q_num]
             status = "✓" if data['is_correct'] else f"✗ (Key: {corr})"
         else:
-            status = "Shaded" if data['chosen'] not in ("BLANK", "AMBIGUOUS") else data['chosen']
+            status = "Shaded" if data['chosen'] != "BLANK" else "BLANK"
         print(f"Q{q_num:<4} | {data['chosen']:<10} | {data['confidence']:<10.2f} | {status}")
 
     print("=" * 50)
     if summary.get("score") is not None:
         pct = (summary['score'] / float(summary['max_score'])) * 100
         print(f"\nFINAL SCORE: {summary['score']} / {summary['max_score']} ({pct:.1f}%)")
-    print(f"Total Detected: {summary['answered']} / {summary['total_questions']} Shaded | "
-          f"Blank: {summary['blank']} | Ambiguous: {summary['ambiguous']}\n")
+    print(f"Total Detected: {summary['answered']} / {summary['total_questions']} Shaded | Blank: {summary['blank']}\n")
 
     return results, summary
 

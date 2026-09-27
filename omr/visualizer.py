@@ -58,11 +58,6 @@ def annotate_graded_sheet(warped_img, results, summary, options=("A", "B", "C", 
                 2
             )
 
-        elif chosen == "AMBIGUOUS":
-            # Yellow warning circle
-            bx, by = coords[0]
-            cv2.circle(annotated, (bx, by), r + 4, (0, 220, 255), 3)
-
     # 3. Add top Score / Detection Banner
     banner_h = 70
     banner = np.zeros((banner_h, w, 3), dtype="uint8")
@@ -74,11 +69,10 @@ def annotate_graded_sheet(warped_img, results, summary, options=("A", "B", "C", 
     else:
         main_title = f"DETECTED ANSWERS: {summary['answered']} / {summary['total_questions']} SHADED"
 
-    stats_text = f"Total: {summary['total_questions']} | Answered: {summary['answered']} | " \
-                 f"Blank: {summary['blank']} | Ambiguous: {summary['ambiguous']}"
+    stats_text = f"Total: {summary['total_questions']} | Shaded: {summary['answered']} | Blank: {summary['blank']}"
 
     cv2.putText(banner, main_title, (30, 44), cv2.FONT_HERSHEY_DUPLEX, 1.1, (0, 255, 120), 2)
-    cv2.putText(banner, stats_text, (w - 680, 44), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (230, 230, 230), 1)
+    cv2.putText(banner, stats_text, (w - 550, 44), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (230, 230, 230), 1)
 
     annotated = np.vstack([banner, annotated])
     return annotated

@@ -34,17 +34,15 @@ def sample_fill_ratio(pencil_mask, cx, cy, radius):
 
 
 def classify_bubble_group(fill_ratios, options=("A", "B", "C", "D"),
-                          blank_threshold=0.14, ambiguity_gap=0.08):
+                          blank_threshold=0.14):
     """
     Classifies a question's options based on absolute fill ratio and relative contrast:
       - BLANK: if highest ratio is below blank_threshold.
-      - AMBIGUOUS: if top 2 options are both shaded and within ambiguity_gap.
-      - Option (A/B/C/D): the single clear highest fill ratio.
+      - Option (A/B/C/D): the darkest shaded bubble (highest fill ratio wins).
     """
     sorted_indices = sorted(range(len(fill_ratios)), key=lambda k: fill_ratios[k], reverse=True)
     best_idx = sorted_indices[0]
     best_val = fill_ratios[best_idx]
-    second_val = fill_ratios[sorted_indices[1]] if len(sorted_indices) > 1 else 0.0
 
     # Calculate average of the unshaded options for contrast validation
     other_vals = [fill_ratios[i] for i in range(len(fill_ratios)) if i != best_idx]
@@ -57,9 +55,8 @@ def classify_bubble_group(fill_ratios, options=("A", "B", "C", "D"),
 
     if not is_shaded:
         return "BLANK", best_val, None
-    elif len(sorted_indices) > 1 and (best_val - second_val) < ambiguity_gap and second_val >= blank_threshold:
-        return "AMBIGUOUS", best_val, None
     else:
+        # Darkest bubble always wins (no ambiguity)
         return options[best_idx], best_val, best_idx
 
 
@@ -122,9 +119,8 @@ def evaluate_bubbles(pencil_mask, grid_config, answer_key=None,
 
     summary = {
         "total_questions": len(results),
-        "answered": sum(1 for r in results.values() if r["chosen"] not in ("BLANK", "AMBIGUOUS")),
+        "answered": sum(1 for r in results.values() if r["chosen"] != "BLANK"),
         "blank": sum(1 for r in results.values() if r["chosen"] == "BLANK"),
-        "ambiguous": sum(1 for r in results.values() if r["chosen"] == "AMBIGUOUS"),
         "score": total_score if answer_key else None,
         "max_score": len(answer_key) if answer_key else None,
     }
